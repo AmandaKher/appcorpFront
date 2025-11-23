@@ -1,3 +1,4 @@
+
 const appCorporativa = {
     // -----------------------------------------
     // FUNÇÃO: criarTabela()
@@ -32,10 +33,14 @@ const appCorporativa = {
         const tbody = document.createElement("tbody");
 
         try {
+            let headers = { "Content-Type": "application/json" };
+            if (parametros.token) {
+                headers["Authorization"] = "Bearer " + parametros.token;
+            }
             const resposta = await fetch(parametros.url, {
                     method: "GET",
                     mode: 'cors',
-                    headers: { "Content-Type": "application/json" }
+                    headers: headers
                 });
             if (!resposta.ok) throw new Error("Erro ao buscar dados da URL: " + parametros.url);
             const dados = await resposta.json();
@@ -68,7 +73,11 @@ const appCorporativa = {
                         btnRemover.textContent = "Remover";
                         btnRemover.onclick = async () => {
                             if (confirm("Deseja realmente remover este registro?")) {
-                                const resp = await fetch(parametros.urlRemover + "/" + idItem, { method: "DELETE" });
+                                let headers = { "Content-Type": "application/json" };
+                                if (parametros.token) {
+                                    headers["Authorization"] = "Bearer " + parametros.token;
+                                }
+                                const resp = await fetch(parametros.urlRemover + "/" + idItem, { method: "DELETE", headers: headers });
                                 if (resp.ok) {
                                     alert("Registro removido com sucesso!");
                                     appCorporativa.criarTabela(parametros);
@@ -108,9 +117,11 @@ const appCorporativa = {
         // Extrai ID da URL (modo edição)
         const urlParams = new URLSearchParams(window.location.search);
         const idEdicao = urlParams.get("id");
-
+        if(parametros.colunas && !parametros.campos){
+            parametros.campos = parametros.colunas;
+        }
         // Cria campos
-        for (const col of parametros.colunas) {
+        for (const col of parametros.campos) {
             const divContainer = document.createElement("div");
             divContainer.style.marginBottom = "10px";
             form.appendChild(divContainer);
@@ -126,7 +137,7 @@ const appCorporativa = {
                 input = document.createElement("select");
                 input.name = col.dado;
                 input.id = col.dado;
-
+                input.value =  col.valorPadrao ? col.valorPadrao : "";
                 const optGenerico = document.createElement("option");
                 optGenerico.value = "";
                 optGenerico.textContent = "Selecione...";
@@ -135,7 +146,11 @@ const appCorporativa = {
                     input.required = true;
                 // Carrega opções da URL
                 try {
-                    const resp = await fetch(col.urlConsulta);
+                    let headers = { "Content-Type": "application/json" };
+                    if (parametros.token) {
+                        headers["Authorization"] = "Bearer " + parametros.token;
+                    }
+                    const resp = await fetch(col.urlConsulta, { headers: headers });
                     const dados = await resp.json();
                     dados.forEach(op => {
                         const opt = document.createElement("option");
@@ -153,6 +168,8 @@ const appCorporativa = {
                 input = document.createElement("textarea");
                 input.name = col.dado;
                 input.id = col.dado;
+                input.placeholder = col.titulo;
+                input.textContent =  col.valorPadrao ? col.valorPadrao : "";
                 if (col.obrigatorio)
                     input.required = true;
             }
@@ -161,6 +178,7 @@ const appCorporativa = {
                 input.name = col.dado;
                 input.id = col.dado;
                 input.placeholder = col.titulo;
+                input.value =  col.valorPadrao ? col.valorPadrao : "";
                 if (col.obrigatorio)
                     input.required = true;
 
@@ -203,15 +221,26 @@ const appCorporativa = {
         if (idEdicao) {
             console.log("Edição"+ idEdicao);
             try {
-                const resp = await fetch(parametros.urlCargaDados.replace("id=", "") + idEdicao);
+                let headers = { "Content-Type": "application/json" };
+                if (parametros.token) {
+                    headers["Authorization"] = "Bearer " + parametros.token;
+                }
+                const resp = await fetch(parametros.urlCargaDados.replace("id=", "") + idEdicao, { headers: headers });
                 if (resp.ok) {
                     const dados = await resp.json();
                     console.log("Dados retornados", dados);
-                    parametros.colunas.forEach(col => {
+                    parametros.campos.forEach(col => {
                         const campo = form.querySelector(`[name='${col.dado}']`);
                         if (campo) {
-                            const valor = col.dado.split('.').reduce((obj, chave) => obj && obj[chave], dados);
-                            campo.value = valor ?? "";
+                            if(col.tipo === "relacionamento") {
+                                const valorRel = JSON.stringify(dados[col.dado]);
+                                console.log("Valor relacionamento:", valorRel);
+                                campo.value = valorRel;
+                                return;
+                            } else {
+                                const valor = col.dado.split('.').reduce((obj, chave) => obj && obj[chave], dados);
+                                campo.value = valor ?? "";
+                            }
                         }
                     });
                 }
@@ -225,17 +254,13 @@ const appCorporativa = {
             e.preventDefault();
             const obj = {};
 
-            parametros.colunas.forEach(col => {
+            parametros.campos.forEach(col => {
                 const valor = form.querySelector(`[name='${col.dado}']`).value;
-                if (col.tipo === "relacionamento") {
-                    // Cria objeto aninhado ex: editora: { id: X }
-                    const partes = col.dado.split('.');
-                    if (partes.length > 1) {
-                        obj[partes[0]] = { [partes[1]]: valor };
-                    }
-                } else {
-                    obj[col.dado] = valor;
-                }
+               if(col.tipo === "relacionamento") {
+                   obj[col.dado] = JSON.parse(valor);
+               } else {
+                   obj[col.dado] = valor;
+               }
             });
 
             const metodo = idEdicao ? "PUT" : "POST";
@@ -244,9 +269,13 @@ const appCorporativa = {
                 : parametros.urlCadastrar;
 
             try {
+                let headers = { "Content-Type": "application/json" };
+                if (parametros.token) {
+                    headers["Authorization"] = "Bearer " + parametros.token;
+                }
                 const resp = await fetch(urlEnvio, {
                     method: metodo,
-                    headers: { "Content-Type": "application/json" },
+                    headers: headers,
                     body: JSON.stringify(obj)
                 });
                 if (resp.ok) {

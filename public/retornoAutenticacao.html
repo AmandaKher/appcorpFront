@@ -38,6 +38,7 @@ async function trocarCodePorToken() {
     // Armazena o token localmente
     localStorage.setItem("tokenAppCorporativa", tokenData.id_token);
 //localStorage.setItem("tokenAppCorporativa", code);
+localStorage.setItem("email", params.get("email"))
     // Redireciona para a página principal
    window.location.href = "index.html";
   }

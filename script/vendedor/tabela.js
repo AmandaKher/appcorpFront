@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             { titulo: 'ID', dado: 'id' },
             { titulo: 'Nome', dado: 'nome' },
             { titulo: 'Cpf', dado: 'cpf'},
-            { titulo: 'Data de Nascimento'},
+            { titulo: 'Data de Nascimento', dado: 'dataNascimento'},
         ],
         exibeEditar: true,
         idEnvio: 'id',

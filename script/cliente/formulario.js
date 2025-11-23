@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         urlCadastrar: 'http://localhost:8080/projeto/clientes',
         urlEditar: 'http://localhost:8080/projeto/clientes',
         urlCargaDados: 'http://localhost:8080/projeto/clientes/id=',
+        token: localStorage.getItem("tokenAppCorporativa")
     };
     appCorporativa.criarFormulario(
         parametros
