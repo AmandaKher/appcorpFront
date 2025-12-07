@@ -3,7 +3,7 @@ async function verificarUsuario() {
 
     if (!token) {
         console.error("Nenhum token encontrado no localStorage!");
-        window.location.href = "login.html"; // caso queira voltar ao login
+        window.location.href = "login.html"; 
         return;
     }
 
@@ -25,7 +25,6 @@ async function verificarUsuario() {
             window.location.href = "cadastro.html?email=" + email;
         } else {
             console.log("Usuário verificado:", usuario);
-            // aqui segue normalmente para seu index
         }
     } catch (e) {
         console.error("Erro ao decodificar token:", e);
@@ -33,5 +32,4 @@ async function verificarUsuario() {
     }
 }
 
-// Executar assim que a página carregar
 verificarUsuario();
